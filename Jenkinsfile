@@ -28,18 +28,23 @@ pipeline {
 
         stage('Run Prometheus') {
             steps {
-                sh '''
-                mkdir -p $PROMETHEUS_CONFIG_DIR
-                cp prometheus.yml $PROMETHEUS_CONFIG_DIR/prometheus.yml
+               sh '''
+        # 1. Create the directory safely using quotes
+        mkdir -p "$PROMETHEUS_CONFIG_DIR"
+        
+        # 2. Copy the file using quotes
+        cp prometheus.yml "$PROMETHEUS_CONFIG_DIR/prometheus.yml"
 
-                docker ps -q --filter "name=prometheus" | grep -q . && docker stop prometheus && docker rm prometheus || true
+        # 3. Stop and remove the existing container if it is running
+        docker ps -q --filter "name=prometheus" | grep -q . && docker stop prometheus && docker rm prometheus || true
 
-                docker run -d \
-                  --name=prometheus \
-                  -p 9090:9090 \
-                  -v $PROMETHEUS_CONFIG_DIR/prometheus.yml:/etc/prometheus/prometheus.yml \
-                  prom/prometheus
-                '''
+        # 4. Spin up the new Prometheus container with the quoted volume path
+        docker run -d \
+          --name prometheus \
+          -p 9090:9090 \
+          -v "$PROMETHEUS_CONFIG_DIR/prometheus.yml:/etc/prometheus/prometheus.yml" \
+          prom/prometheus
+        '''
             }
         }
 
