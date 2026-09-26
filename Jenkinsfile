@@ -26,27 +26,38 @@ pipeline {
             }
         }
 
+        stage('Run Node Exporter') {
+            steps {
+                sh '''
+                docker ps -q --filter "name=node-exporter" | grep -q . && docker stop node-exporter && docker rm node-exporter || true
+
+                # Added --network host and removed the unnecessary -p flag
+                docker run -d \
+                  --name=node-exporter \
+                  --network host \
+                  prom/node-exporter
+                '''
+            }
+        }
+
         stage('Run Prometheus') {
             steps {
                sh '''
-        # 1. Create the directory safely using quotes
         mkdir -p "$PROMETHEUS_CONFIG_DIR"
-        
-        # 2. Copy the file using quotes
         cp prometheus.yml "$PROMETHEUS_CONFIG_DIR/prometheus.yml"
 
-        # 3. Stop and remove the existing container if it is running
         docker ps -q --filter "name=prometheus" | grep -q . && docker stop prometheus && docker rm prometheus || true
 
-        # 4. Spin up the new Prometheus container with the quoted volume path
+        # Confirmed --network host configuration
         docker run -d \
           --name prometheus \
-          -p 9090:9090 \
+          --network host \
           -v "$PROMETHEUS_CONFIG_DIR/prometheus.yml:/etc/prometheus/prometheus.yml" \
           prom/prometheus
         '''
             }
         }
+
 
         stage('Run Grafana') {
             steps {
