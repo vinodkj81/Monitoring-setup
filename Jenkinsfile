@@ -18,20 +18,7 @@ pipeline {
                 sh '''
                 docker ps -q --filter "name=node-exporter" | grep -q . && docker stop node-exporter && docker rm node-exporter || true
 
-                docker run -d \
-                  --name=node-exporter \
-                  -p 9100:9100 \
-                  prom/node-exporter
-                '''
-            }
-        }
-
-        stage('Run Node Exporter') {
-            steps {
-                sh '''
-                docker ps -q --filter "name=node-exporter" | grep -q . && docker stop node-exporter && docker rm node-exporter || true
-
-                # Added --network host and removed the unnecessary -p flag
+                # Running natively on host network layer to communicate with Prometheus
                 docker run -d \
                   --name=node-exporter \
                   --network host \
@@ -48,7 +35,7 @@ pipeline {
 
         docker ps -q --filter "name=prometheus" | grep -q . && docker stop prometheus && docker rm prometheus || true
 
-        # Confirmed --network host configuration
+        # Running natively on host network layer to scrape metrics via localhost
         docker run -d \
           --name prometheus \
           --network host \
@@ -57,7 +44,6 @@ pipeline {
         '''
             }
         }
-
 
         stage('Run Grafana') {
             steps {
